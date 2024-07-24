@@ -1,5 +1,5 @@
 ###############################################################################################################################
-#                                           Azure Cost Management Budget Creation Script                                       #
+# Azure Cost Management Budget Creation Script                                                                                 #
 #                                                                                                                              #
 # This script creates a budget in Azure Cost Management using the REST API.                                                    #
 #                                                                                                                              #
@@ -16,18 +16,29 @@
 # - Input parameters: subscription ID, tenant ID, budget name, contact emails, start date, end date, and amount.               #
 ###############################################################################################################################
 
+# Define input parameters
+$tenantId = "00000000-0000-0000-0000-000000000000"
+$subscriptionId = "00000000-0000-0000-0000-000000000000"
+$contactEmails = @("your-email1@example.com", "your-email2@example.com")
+$startDate = "2024-07-01T00:00:00Z"
+$endDate = "2025-12-31T00:00:00Z"
+$amount = 1000
 
 # Authenticate and select the subscription and tenant
-$tenantId = "86759412-e019-4f10-a127-be41d0dcbc72"
-$subscriptionId = "e595abb5-209a-4cce-8515-6311102caecb"
-$budgetName = "Azure_FinOps_Budget"
-$contactEmails = @("nicholas_pinheiro@navyfederal.org", "alok_kar@navyfederal.org")
-$startDate = "2024-10-01T00:00:00Z"
-$endDate = "2024-12-31T00:00:00Z"
-$amount = 500
-
 Connect-AzAccount -TenantId $tenantId -SubscriptionId $subscriptionId
 
+# Fetch subscription details to get the subscription name
+$subscription = Get-AzSubscription -SubscriptionId $subscriptionId
+$subscriptionName = $subscription.Name
+
+# Define naming convention for budget name
+$budgetType = "MONTHLY"
+$budgetName = "FINOPS-BUDGET-$budgetType-$subscriptionName"
+
+# Convert budget name to uppercase
+$budgetName = $budgetName.ToUpper()
+
+# Prepare the request body
 $body = @{
     "properties"= @{
         "category" = "Cost"
@@ -57,7 +68,11 @@ $body = @{
         }
     }
 }
+
+# Get authentication token
 $token=(Get-AzAccessToken).token
+
+# Invoke REST API to create the budget
 Invoke-RestMethod `
     -Method Put `
     -Headers @{"Authorization"="Bearer $token"} `
